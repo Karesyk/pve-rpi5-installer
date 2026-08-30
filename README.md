@@ -124,7 +124,6 @@ Before running the installer, ensure the Raspberry Pi 5 EEPROM is configured to 
 ```bash
 # 1. Download the script
 wget https://raw.githubusercontent.com/Karesyk/pve-rpi5-installer/refs/heads/main/pve-rpi5-installer.sh
-cd proxmox-rpi5-installer
 
 # 2. Make the script executable
 sudo chmod +x pve-rpi5-installer.sh
