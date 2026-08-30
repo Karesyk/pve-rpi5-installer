@@ -106,6 +106,78 @@ https://<YOUR-STATIC-IP>:8006
 
 ---
 
+## Maintenance & Package Upgrades
+
+Because all generic x86 and default PVE kernel metapackages are protected via `apt-mark hold`, you can safely update the host system via standard Debian tooling:
+
+```bash
+# Update package repositories and upgrade packages
+sudo apt update
+sudo apt dist-upgrade -y
+```
+
+### Checking Package Holds
+To verify that kernel protection remains active:
+```bash
+apt-mark showhold
+```
+*Expected output:*
+```text
+proxmox-default-kernel
+proxmox-ve
+```
+
+> **Warning:** Never run `apt install proxmox-ve` or unhold the kernel packages. Doing so will replace the Raspberry Pi boot chain with standard x86/ARM generic kernels and break hardware initialization.
+
+---
+
+## Troubleshooting & Known Behaviors
+
+### 1. `proxmox-ve: not correctly installed` warning in `pveversion -v`
+```text
+# pveversion -v
+proxmox-ve: not correctly installed (running kernel: 6.18.xx+rpt-rpi-2712)
+pve-manager: 9.x.x
+...
+```
+- **Cause:** Proxmox expects its own packaged kernel (`proxmox-kernel-*`). On Raspberry Pi 5, the Broadcom kernel (`kernel8.img`) is used instead to retain hardware support.
+- **Action:** None. This warning is cosmetic and does not impact hypervisor stability.
+
+### 2. Node Status shows a Question Mark (`?`) in the Web GUI
+- **Cause:** The cluster statistics collector (`pvestatd`) occasionally desynchronizes after an initial cold boot.
+- **Resolution:**
+  ```bash
+  sudo systemctl restart pvestatd
+  ```
+
+### 3. Verifying PCIe Link Speed
+To confirm that the NVMe HAT is running at full PCIe Gen 2 (5.0 GT/s) speeds:
+```bash
+dmesg | grep -i pcie
+```
+*Expected output:*
+```text
+brcm-pcie 1000110000.pcie: link up, 5.0 GT/s PCIe x1
+```
+
+### 4. Verifying 4K Page-Size Kernel
+To confirm that the 4K kernel is actively running:
+```bash
+getconf PAGESIZE
+```
+*Expected output:* `4096` *(If output shows `16384`, verify `kernel=kernel8.img` in `/boot/firmware/config.txt` and reboot).*
+
+---
+
+## References & Acknowledgments
+
+- **Technical Analysis & Core Procedure:** [Virtualization Howto by Brandon Lee](https://www.virtualizationhowto.com/2026/08/i-got-proxmox-ve-9-working-on-raspberry-pi-5-with-nvme-boot-and-the-onboard-nic/)
+- **ARM64 Virtualization Workarounds:** [Pxvirt Documentation](https://docs.pxvirt.lierfang.com/en/case/issue/raspberrypi.html)
+- **Log RAM Storage Engine:** [Azlux log2ram](https://github.com/azlux/log2ram)
+- **Official Proxmox VE Project:** [Proxmox Server Solutions GmbH](https://www.proxmox.com)
+
+---
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
