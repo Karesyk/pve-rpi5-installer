@@ -17,7 +17,12 @@ echo "=========================================================="
 echo "  Proxmox VE Setup for Raspberry Pi 5 (NVMe + Cgroups)"
 echo "=========================================================="
 
-# 2. Determine network configuration and hostname
+# 2. System base update & full-upgrade
+echo "[INFO] Updating package lists and performing full-upgrade..."
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get full-upgrade -y
+
+# 3. Determine network configuration and hostname
 HOSTNAME=$(hostname)
 DETECTED_IFACE=$(ip route show default 2>/dev/null | awk '{print $5}' | head -n 1 || true)
 DETECTED_IFACE="${DETECTED_IFACE:-eth0}"
@@ -48,7 +53,7 @@ NODE_GW="${INPUT_GW:-$DETECTED_GW}"
 
 echo "[INFO] Configuring for Hostname: $HOSTNAME | Interface: $NET_IFACE | IP: $NODE_IP_CIDR | Gateway: $NODE_GW"
 
-# 3. Check and set root password (required for Proxmox Web GUI PAM login)
+# 4. Check and set root password (required for Proxmox Web GUI PAM login)
 ROOT_PW_STATUS=$(passwd -S root 2>/dev/null | awk '{print $2}' || true)
 
 if [ "$ROOT_PW_STATUS" = "P" ]; then
@@ -63,7 +68,7 @@ else
     echo "----------------------------------------------------------"
 fi
 
-# 4. FIX 1: Boot firmware parameters in config.txt (PCIe + kernel8.img)
+# 5. FIX 1: Boot firmware parameters in config.txt (PCIe + kernel8.img)
 CONFIG_TXT="/boot/firmware/config.txt"
 if [ -f "$CONFIG_TXT" ]; then
     echo "[INFO] Configuring $CONFIG_TXT..."
@@ -74,7 +79,7 @@ else
     echo "[WARNING] $CONFIG_TXT not found."
 fi
 
-# 5. FIX 2: Append cgroups to cmdline.txt
+# 6. FIX 2: Append cgroups to cmdline.txt
 CMDLINE_TXT="/boot/firmware/cmdline.txt"
 CGROUP_PARAMS="cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1"
 
@@ -87,7 +92,7 @@ else
     echo "[WARNING] $CMDLINE_TXT not found."
 fi
 
-# 6. Configure systemd-journald to volatile (RAM only to reduce disk wear)
+# 7. Configure systemd-journald to volatile (RAM only to reduce disk wear)
 JOURNALD_CONF="/etc/systemd/journald.conf"
 echo "[INFO] Configuring systemd-journald storage to volatile..."
 if [ -f "$JOURNALD_CONF" ]; then
@@ -99,7 +104,7 @@ if [ -f "$JOURNALD_CONF" ]; then
     systemctl restart systemd-journald || true
 fi
 
-# 7. Configure hostname resolution & clean Cloud-Init Jinja template
+# 8. Configure hostname resolution & clean Cloud-Init Jinja template
 echo "[INFO] Adjusting hostname resolution and cloud-init template..."
 sed -i "/127\.0\.1\.1/d" /etc/hosts
 
@@ -140,7 +145,7 @@ TEMPLATE_EOF
     cloud-init single --name update_etc_hosts --frequency always || true
 fi
 
-# 8. Set up prerequisites & repositories (Proxmox + Azlux / log2ram)
+# 9. Set up prerequisites & repositories (Proxmox + Azlux / log2ram)
 echo "[INFO] Installing prerequisites & GPG keys..."
 apt-get update
 apt-get install -y wget ca-certificates gnupg debconf-utils
@@ -173,14 +178,14 @@ AZLUX_KEY="/usr/share/keyrings/azlux-archive-keyring.gpg"
 wget -qO "$AZLUX_KEY" https://azlux.fr/repo.gpg
 echo "deb [signed-by=${AZLUX_KEY}] http://packages.azlux.fr/debian/ bookworm main" > /etc/apt/sources.list.d/azlux.list
 
-# 9. Preconfigure Postfix (Headless / Non-interactive)
+# 10. Preconfigure Postfix (Headless / Non-interactive)
 echo "postfix postfix/main_mailer_type select Local only" | debconf-set-selections
 echo "postfix postfix/mailname string $HOSTNAME.local" | debconf-set-selections
 
-# 10. Update package index
+# 11. Update package index
 apt-get update
 
-# 11. Install ifupdown2, log2ram & configure Proxmox Linux Bridge (vmbr0)
+# 12. Install ifupdown2, log2ram & configure Proxmox Linux Bridge (vmbr0)
 echo "[INFO] Disabling NetworkManager if present..."
 systemctl stop NetworkManager 2>/dev/null || true
 systemctl disable NetworkManager 2>/dev/null || true
@@ -205,7 +210,7 @@ iface vmbr0 inet static
     bridge-fd 0
 INTERFACES_EOF
 
-# 12. Install Proxmox packages without default/x86 kernel
+# 13. Install Proxmox packages without default/x86 kernel
 echo "[INFO] Installing Proxmox VE core packages..."
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     pve-manager \
@@ -217,11 +222,11 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     pve-ha-manager \
     lxc-pve
 
-# 13. Place apt-hold on metapackages and stock kernels
+# 14. Place apt-hold on metapackages and stock kernels
 echo "[INFO] Holding PVE kernel metapackages..."
 apt-mark hold proxmox-ve proxmox-default-kernel proxmox-kernel-* || true
 
-# 14. Restart Proxmox services
+# 15. Restart Proxmox services
 echo "[INFO] Restarting Proxmox services..."
 systemctl reset-failed pve-cluster pvestatd || true
 systemctl restart pve-cluster
