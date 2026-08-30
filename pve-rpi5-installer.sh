@@ -20,7 +20,7 @@ echo "=========================================================="
 # 2. System base update & full-upgrade
 echo "[INFO] Updating package lists and performing full-upgrade..."
 apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get full-upgrade -y
+DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" full-upgrade -y
 
 # 3. Determine network configuration and hostname
 HOSTNAME=$(hostname)
@@ -51,7 +51,7 @@ NODE_IP="${NODE_IP_CIDR%/*}"
 read -rp "Gateway IP Address [$DETECTED_GW]: " INPUT_GW
 NODE_GW="${INPUT_GW:-$DETECTED_GW}"
 
-echo "[INFO] Configuring for Hostname: $HOSTNAME | Interface: $NET_IFACE | IP: $NODE_IP_CIDR | Gateway: $NODE_GW"
+echo "[INFO] Configuring for Hostname: $HOSTNAME \vert{} Interface:$NET_IFACE | IP: $NODE_IP_CIDR \vert{} Gateway:$NODE_GW"
 
 # 4. Check and set root password (required for Proxmox Web GUI PAM login)
 ROOT_PW_STATUS=$(passwd -S root 2>/dev/null | awk '{print $2}' || true)
@@ -72,9 +72,9 @@ fi
 CONFIG_TXT="/boot/firmware/config.txt"
 if [ -f "$CONFIG_TXT" ]; then
     echo "[INFO] Configuring $CONFIG_TXT..."
-    grep -q "^dtparam=pciex1" "$CONFIG_TXT" || echo "dtparam=pciex1" >> "$CONFIG_TXT"
-    grep -q "^dtparam=pciex1_gen=2" "$CONFIG_TXT" || echo "dtparam=pciex1_gen=2" >> "$CONFIG_TXT"
-    grep -q "^kernel=kernel8.img" "$CONFIG_TXT" || echo "kernel=kernel8.img" >> "$CONFIG_TXT"
+    grep -q "^dtparam=pciex1" "$CONFIG_TXT" \vert{}\vert{} echo "dtparam=pciex1" >> "$CONFIG_TXT"
+    grep -q "^dtparam=pciex1_gen=2" "$CONFIG_TXT" \vert{}\vert{} echo "dtparam=pciex1_gen=2" >> "$CONFIG_TXT"
+    grep -q "^kernel=kernel8.img" "$CONFIG_TXT" \vert{}\vert{} echo "kernel=kernel8.img" >> "$CONFIG_TXT"
 else
     echo "[WARNING] $CONFIG_TXT not found."
 fi
@@ -163,16 +163,6 @@ Components: pve-no-subscription
 Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
 SOURCES
 
-# Inactive Enterprise Repository
-cat << 'SOURCES_ENT' > /etc/apt/sources.list.d/pve-enterprise.sources
-Types: deb
-URIs: https://enterprise.proxmox.com/debian/pve
-Suites: trixie
-Components: pve-enterprise
-Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
-Enabled: no
-SOURCES_ENT
-
 # Azlux Repository for log2ram
 AZLUX_KEY="/usr/share/keyrings/azlux-archive-keyring.gpg"
 wget -qO "$AZLUX_KEY" https://azlux.fr/repo.gpg
@@ -191,7 +181,7 @@ systemctl stop NetworkManager 2>/dev/null || true
 systemctl disable NetworkManager 2>/dev/null || true
 
 echo "[INFO] Installing ifupdown2 and log2ram..."
-DEBIAN_FRONTEND=noninteractive apt-get install -y ifupdown2 log2ram
+DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y ifupdown2 log2ram
 rm -f /etc/network/interfaces.new
 
 echo "[INFO] Configuring Proxmox Linux Bridge (vmbr0) in /etc/network/interfaces..."
@@ -212,35 +202,14 @@ INTERFACES_EOF
 
 # 13. Install Proxmox packages without default/x86 kernel
 echo "[INFO] Installing Proxmox VE core packages..."
-DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y --no-install-recommends \
     pve-manager \
     pve-qemu-kvm \
     qemu-server \
     pve-container \
-    pve-cluster \
-    pve-firewall \
-    pve-ha-manager \
-    lxc-pve
+    pDa wir uns in einem neuen Verlauf befinden, liegt mir das vorherige Skript aus dem letzten Chat aktuell nicht vor.
 
-# 14. Place apt-hold on metapackages and stock kernels
-echo "[INFO] Holding PVE kernel metapackages..."
-apt-mark hold proxmox-ve proxmox-default-kernel proxmox-kernel-* || true
+Damit du direkt die saubere Version bekommst:
 
-# 15. Restart Proxmox services
-echo "[INFO] Restarting Proxmox services..."
-systemctl reset-failed pve-cluster pvestatd || true
-systemctl restart pve-cluster
-systemctl restart pvedaemon
-systemctl restart pveproxy
-systemctl restart pvestatd
-
-echo "=========================================================="
-echo "  Installation completed successfully!"
-echo "  Web interface: https://$NODE_IP:8006"
-echo "  Login User   : root"
-echo "  Bridge Config: vmbr0 active on ${NET_IFACE}"
-echo "  log2ram      : Installed (reduces disk writes)"
-echo "  journald     : Set to volatile (RAM-buffered logs)"
-echo "  NOTE: Please run 'sudo reboot' now to load the 4K kernel"
-echo "  (kernel8.img), cgroups, and apply the bridge networking."
-echo "=========================================================="
+* **Skript einfügen:** Poste das betroffene Skript kurz hier hinein – ich bereinige alle Zitate und Tags sofort.
+* **Neu generieren:** Falls es um das **neustartfeste Policy-Routing für Docker (`ip rule` / `iptables` über ein bestimmtes Interface wie `eth3`)** ging, gib kurz Bescheid. Dann erstelle ich das Setup (z. B. als systemd-Service oder NetworkManager-Dispatcher-Skript) direkt komplett ohne störende Zitate neu.
