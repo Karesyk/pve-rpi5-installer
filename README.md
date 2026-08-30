@@ -1,4 +1,4 @@
-# Proxmox VE 9 on Raspberry Pi 5 (Native NVMe Boot & Onboard NIC)
+# Proxmox VE 9 on Raspberry Pi 5 (optionally native NVMe Boot & Onboard NIC)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi%205-red.svg)](https://www.raspberrypi.com/products/raspberry-pi-5/)
@@ -6,7 +6,7 @@
 [![Proxmox VE](https://img.shields.io/badge/Proxmox%20VE-9%20(Trixie)-orange.svg)](https://proxmox.com)
 [![Kernel](https://img.shields.io/badge/Kernel-Broadcom%204K%20(kernel8.img)-green.svg)](https://github.com/raspberrypi/linux)
 
-A production-ready automated deployment script and comprehensive guide for running official **Proxmox VE 9 (Debian Trixie) ARM64** on a **Raspberry Pi 5**. This setup boots directly from an M.2 NVMe SSD over PCIe Gen 2, preserves the native Broadcom kernel for onboard Gigabit Ethernet functionality, enforces 4K page-size compatibility for QEMU/KVM, and includes flash-wear mitigations out of the box.
+A production-ready automated deployment script and comprehensive guide for running official **Proxmox VE 9 (Debian Trixie) ARM64** on a **Raspberry Pi 5**. This setup optionally boots directly from an M.2 NVMe SSD over PCIe Gen 2, preserves the native Broadcom kernel for onboard Gigabit Ethernet functionality, enforces 4K page-size compatibility for QEMU/KVM, and includes flash-wear mitigations out of the box.
 
 ---
 
@@ -122,15 +122,15 @@ Before running the installer, ensure the Raspberry Pi 5 EEPROM is configured to 
 ## Quick Installation
 
 ```bash
-# 1. Clone this repository
-git clone https://github.com/<YOUR-USERNAME>/proxmox-rpi5-installer.git
+# 1. Download the script
+wget https://raw.githubusercontent.com/Karesyk/pve-rpi5-installer/refs/heads/main/pve-rpi5-installer.sh
 cd proxmox-rpi5-installer
 
 # 2. Make the script executable
-chmod +x install-pve-rpi5.sh
+sudo chmod +x pve-rpi5-installer.sh
 
 # 3. Run the installer with administrative privileges
-sudo ./install-pve-rpi5.sh
+sudo ./pve-rpi5-installer.sh
 
 # 4. Reboot after script completion
 sudo reboot
