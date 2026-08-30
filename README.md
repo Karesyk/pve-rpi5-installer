@@ -96,16 +96,6 @@ https://<YOUR-STATIC-IP>:8006
 
 ---
 
-## Repository Structure
-
-```text
-├── pve-rpi5-installer.sh    # Main setup and provisioning script
-├── LICENSE                  # License file (e.g., MIT)
-└── README.md                # Project documentation
-```
-
----
-
 ## Maintenance & Package Upgrades
 
 Because all generic x86 and default PVE kernel metapackages are protected via `apt-mark hold`, you can safely update the host system via standard Debian tooling:
