@@ -166,7 +166,7 @@ SOURCES
 # Azlux Repository for log2ram
 AZLUX_KEY="/usr/share/keyrings/azlux-archive-keyring.gpg"
 wget -qO "$AZLUX_KEY" https://azlux.fr/repo.gpg
-echo "deb [signed-by=${AZLUX_KEY}] http://packages.azlux.fr/debian/ bookworm main" > /etc/apt/sources.list.d/azlux.list
+echo "deb [signed-by=${AZLUX_KEY}] http://packages.azlux.fr/debian/ trixie main" > /etc/apt/sources.list.d/azlux.list
 
 # 10. Preconfigure Postfix (Headless / Non-interactive)
 echo "postfix postfix/main_mailer_type select Local only" | debconf-set-selections
