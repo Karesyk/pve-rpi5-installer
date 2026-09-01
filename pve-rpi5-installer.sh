@@ -104,7 +104,16 @@ if [ -f "$JOURNALD_CONF" ]; then
     systemctl restart systemd-journald || true
 fi
 
-# 8. Configure hostname resolution & clean Cloud-Init Jinja template
+# 8. Disable Raspberry Pi Swap (reduce NVMe/SD wear & optimize memory management)
+echo "[INFO] Disabling Raspberry Pi swap..."
+mkdir -p /etc/rpi/swap.conf.d/
+cat << 'EOF' > /etc/rpi/swap.conf.d/90-disable-swap.conf
+[Main]
+Mechanism=none
+EOF
+swapoff -a 2>/dev/null || true
+
+# 9. Configure hostname resolution & clean Cloud-Init Jinja template
 echo "[INFO] Adjusting hostname resolution and cloud-init template..."
 sed -i "/127\.0\.1\.1/d" /etc/hosts
 
@@ -145,7 +154,7 @@ TEMPLATE_EOF
     cloud-init single --name update_etc_hosts --frequency always || true
 fi
 
-# 9. Set up prerequisites & repositories (Proxmox + Azlux / log2ram)
+# 10. Set up prerequisites & repositories (Proxmox + Azlux / log2ram)
 echo "[INFO] Installing prerequisites & GPG keys..."
 apt-get update
 apt-get install -y wget ca-certificates gnupg debconf-utils
@@ -168,14 +177,14 @@ AZLUX_KEY="/usr/share/keyrings/azlux-archive-keyring.gpg"
 wget -qO "$AZLUX_KEY" https://azlux.fr/repo.gpg
 echo "deb [signed-by=${AZLUX_KEY}] http://packages.azlux.fr/debian/ trixie main" > /etc/apt/sources.list.d/azlux.list
 
-# 10. Preconfigure Postfix (Headless / Non-interactive)
+# 11. Preconfigure Postfix (Headless / Non-interactive)
 echo "postfix postfix/main_mailer_type select Local only" | debconf-set-selections
 echo "postfix postfix/mailname string $HOSTNAME.local" | debconf-set-selections
 
-# 11. Update package index
+# 12. Update package index
 apt-get update
 
-# 12. Install ifupdown2, log2ram & configure Proxmox Linux Bridge (vmbr0)
+# 13. Install ifupdown2, log2ram & configure Proxmox Linux Bridge (vmbr0)
 echo "[INFO] Disabling NetworkManager if present..."
 systemctl stop NetworkManager 2>/dev/null || true
 systemctl disable NetworkManager 2>/dev/null || true
@@ -200,11 +209,11 @@ iface vmbr0 inet static
     bridge-fd 0
 INTERFACES_EOF
 
-# 13. Install Proxmox packages without default/x86 kernel
+# 14. Install Proxmox packages without default/x86 kernel
 echo "[INFO] Installing Proxmox VE core packages..."
 DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y --no-install-recommends     pve-manager     pve-qemu-kvm     qemu-server     pve-container     pve-cluster     pve-firewall     pve-ha-manager     lxc-pve
 
-# 14. Disable Enterprise Repository post-install
+# 15. Disable Enterprise Repository post-install
 echo "[INFO] Disabling PVE Enterprise repository..."
 if [ -f /etc/apt/sources.list.d/pve-enterprise.sources ]; then
     cat << 'SOURCES_ENT' > /etc/apt/sources.list.d/pve-enterprise.sources
@@ -217,11 +226,11 @@ Enabled: no
 SOURCES_ENT
 fi
 
-# 15. Place apt-hold on metapackages and stock kernels
+# 16. Place apt-hold on metapackages and stock kernels
 echo "[INFO] Holding PVE kernel metapackages..."
 apt-mark hold proxmox-ve proxmox-default-kernel proxmox-kernel-* || true
 
-# 16. Restart Proxmox services
+# 17. Restart Proxmox services
 echo "[INFO] Restarting Proxmox services..."
 systemctl reset-failed pve-cluster pvestatd || true
 systemctl restart pve-cluster
