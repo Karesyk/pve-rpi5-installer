@@ -22,6 +22,7 @@ This installer prepares your system for hypervisor duty by setting up PCIe & 4K 
 * **Storage Protection & Wear Reduction:**
   * Installs and configures **`log2ram`** from the Azlux repository to buffer repetitive disk writes to memory.
   * Configures `systemd-journald` to `Storage=volatile` to protect flash/NVMe media.
+  * Completely disables system swap (`Mechanism=none`) to minimize NVMe/SD write wear, eliminate I/O latencies, and ensure optimal memory management for LXC containers and VMs.
 * **Network & Proxmox Bridge Setup:**
   * Replaces `NetworkManager` with `ifupdown2`.
   * Configures `/etc/network/interfaces` with a dedicated `vmbr0` Linux Bridge mapped to your active interface.
