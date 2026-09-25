@@ -166,6 +166,7 @@ getconf PAGESIZE
 - **ARM64 Virtualization Workarounds:** [Pxvirt Documentation](https://docs.pxvirt.lierfang.com/en/case/issue/raspberrypi.html)
 - **Log RAM Storage Engine:** [Azlux log2ram](https://github.com/azlux/log2ram)
 - **Official Proxmox VE Project:** [Proxmox Server Solutions GmbH](https://www.proxmox.com)
+- **Dennis Schröder:** [Proxmox VE auf dem Raspberry Pi 5](https://schroederdennis.de/raspberry-pi/proxmox-ve-raspberry-pi-5-arm64-anleitung-installieren-tutorial/)
 
 ---
 
