@@ -81,7 +81,7 @@ fi
 
 # 6. FIX 2: Append cgroups to cmdline.txt
 CMDLINE_TXT="/boot/firmware/cmdline.txt"
-CGROUP_PARAMS="cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1"
+CGROUP_PARAMS="cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1 apparmor=1 security=apparmor psi=1"
 
 if [ -f "$CMDLINE_TXT" ]; then
     echo "[INFO] Configuring cgroups in $CMDLINE_TXT..."
@@ -104,7 +104,15 @@ if [ -f "$JOURNALD_CONF" ]; then
     systemctl restart systemd-journald || true
 fi
 
-# 8. Disable Raspberry Pi Swap (reduce NVMe/SD wear & optimize memory management)
+# 8. Disable systemd runtime watchdog (avoid unintended watchdog resets)
+echo "[INFO] Disabling systemd RuntimeWatchdogSec..."
+mkdir -p /etc/systemd/system.conf.d
+cat > /etc/systemd/system.conf.d/99-no-watchdog.conf <<'EOF'
+[Manager]
+RuntimeWatchdogSec=0
+EOF
+
+# 10. Disable Raspberry Pi Swap (reduce NVMe/SD wear & optimize memory management)
 echo "[INFO] Disabling Raspberry Pi swap..."
 mkdir -p /etc/rpi/swap.conf.d/
 cat << 'EOF' > /etc/rpi/swap.conf.d/90-disable-swap.conf
@@ -154,7 +162,7 @@ TEMPLATE_EOF
     cloud-init single --name update_etc_hosts --frequency always || true
 fi
 
-# 10. Set up prerequisites & repositories (Proxmox + Azlux / log2ram)
+# 11. Set up prerequisites & repositories (Proxmox + Azlux / log2ram)
 echo "[INFO] Installing prerequisites & GPG keys..."
 apt-get update
 apt-get install -y wget ca-certificates gnupg debconf-utils
@@ -177,14 +185,14 @@ AZLUX_KEY="/usr/share/keyrings/azlux-archive-keyring.gpg"
 wget -qO "$AZLUX_KEY" https://azlux.fr/repo.gpg
 echo "deb [signed-by=${AZLUX_KEY}] http://packages.azlux.fr/debian/ trixie main" > /etc/apt/sources.list.d/azlux.list
 
-# 11. Preconfigure Postfix (Headless / Non-interactive)
+# 12. Preconfigure Postfix (Headless / Non-interactive)
 echo "postfix postfix/main_mailer_type select Local only" | debconf-set-selections
 echo "postfix postfix/mailname string $HOSTNAME.local" | debconf-set-selections
 
-# 12. Update package index
+# 13. Update package index
 apt-get update
 
-# 13. Install ifupdown2, log2ram & configure Proxmox Linux Bridge (vmbr0)
+# 14. Install ifupdown2, log2ram & configure Proxmox Linux Bridge (vmbr0)
 echo "[INFO] Disabling NetworkManager if present..."
 systemctl stop NetworkManager 2>/dev/null || true
 systemctl disable NetworkManager 2>/dev/null || true
@@ -209,11 +217,11 @@ iface vmbr0 inet static
     bridge-fd 0
 INTERFACES_EOF
 
-# 14. Install Proxmox packages without default/x86 kernel
+# 15. Install Proxmox packages without default/x86 kernel
 echo "[INFO] Installing Proxmox VE core packages..."
 DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y --no-install-recommends     pve-manager     pve-qemu-kvm     qemu-server     pve-container     pve-cluster     pve-firewall     pve-ha-manager     lxc-pve
 
-# 15. Disable Enterprise Repository post-install
+# 16. Disable Enterprise Repository post-install
 echo "[INFO] Disabling PVE Enterprise repository..."
 if [ -f /etc/apt/sources.list.d/pve-enterprise.sources ]; then
     cat << 'SOURCES_ENT' > /etc/apt/sources.list.d/pve-enterprise.sources
@@ -226,11 +234,11 @@ Enabled: no
 SOURCES_ENT
 fi
 
-# 16. Place apt-hold on metapackages and stock kernels
+# 17. Place apt-hold on metapackages and stock kernels
 echo "[INFO] Holding PVE kernel metapackages..."
 apt-mark hold proxmox-ve proxmox-default-kernel proxmox-kernel-* || true
 
-# 17. Restart Proxmox services
+# 18. Restart Proxmox services
 echo "[INFO] Restarting Proxmox services..."
 systemctl reset-failed pve-cluster pvestatd || true
 systemctl restart pve-cluster
@@ -245,6 +253,7 @@ echo "  Login User   : root"
 echo "  Bridge Config: vmbr0 active on ${NET_IFACE}"
 echo "  log2ram      : Installed (reduces disk writes)"
 echo "  journald     : Set to volatile (RAM-buffered logs)"
+echo "  watchdog     : systemd RuntimeWatchdogSec disabled"
 echo "  NOTE: Please run 'sudo reboot' now to load the 4K kernel"
 echo "  (kernel8.img), cgroups, and apply the bridge networking."
 echo "=========================================================="
