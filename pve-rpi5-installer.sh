@@ -237,7 +237,8 @@ fi
 
 # 17. Place apt-hold on metapackages and stock kernels
 echo "[INFO] Holding PVE kernel metapackages..."
-apt-mark hold proxmox-ve proxmox-default-kernel proxmox-kernel-* || true
+# apt-mark hold proxmox-ve proxmox-default-kernel proxmox-kernel-* || true
+apt-mark hold proxmox-ve proxmox-default-kernel proxmox-kernel-* pve-firewall || true
 
 # 18. Restart Proxmox services
 echo "[INFO] Restarting Proxmox services..."
