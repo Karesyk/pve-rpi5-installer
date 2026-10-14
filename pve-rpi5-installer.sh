@@ -219,7 +219,8 @@ INTERFACES_EOF
 
 # 15. Install Proxmox packages without default/x86 kernel
 echo "[INFO] Installing Proxmox VE core packages..."
-DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y --no-install-recommends     pve-manager     pve-qemu-kvm     qemu-server     pve-container     pve-cluster     pve-firewall     pve-ha-manager     lxc-pve
+# DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y --no-install-recommends     pve-manager     pve-qemu-kvm     qemu-server     pve-container     pve-cluster     pve-firewall     pve-ha-manager     lxc-pve
+DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y --no-install-recommends     pve-manager     pve-qemu-kvm     qemu-server     pve-container     pve-cluster     pve-ha-manager     lxc-pve
 
 # 16. Disable Enterprise Repository post-install
 echo "[INFO] Disabling PVE Enterprise repository..."
